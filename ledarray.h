@@ -1,23 +1,22 @@
 #ifndef LEDARRAY_H
 #define LEDARRAY_H
 
-#define N_LEDS 8
-using State = uint8_t;
-static_assert(sizeof(State) * 8 >= N_LEDS, "State type is not large enough to encode all the LEDs.");
-
-#define RED1    0
-#define RED2    1
-#define YELLOW1 2
-#define YELLOW2 3
-#define BLUE1   4
-#define BLUE2   5
-#define GREEN1  6
-#define GREEN2  7
+enum LEDNames {
+    RED1,
+    RED2,
+    YELLOW1,
+    YELLOW2,
+    BLUE1,
+    BLUE2,
+    GREEN1,
+    GREEN2,
+    N_LEDS
+};
 
 class LEDArray 
 {
   int m_latchPin, m_clockPin, m_dataPin;
-  State m_state;
+  uint8_t m_state;
 
 public:
   LEDArray(int latch, int clock, int data):
@@ -31,18 +30,27 @@ public:
       pinMode(m_dataPin, OUTPUT);
     }
 
+  bool isOn(int index)
+  {
+    if (index < 0 || index >= N_LEDS) return false;
+    return m_state & bitmaskFromIndex(index);
+  }
+
+  bool isOff(int index)
+  {
+    return !isOn(index);
+  }
+    
   template <typename ... Args>
   void on(Args ... args) 
   {
     onOff(true, args ...);
-    update();
   }
 
   template <typename ... Args>
   void off(Args ... args) 
   {
     onOff(false, args ...);
-    update();
   }
 
   template <typename ... Args>
@@ -68,22 +76,18 @@ public:
     }
   }
 
-  void setBitPattern(State newState)
+  void setBitPattern(uint8_t newState)
   {
     m_state = newState;
     update();
   }
 
 private:
-  bool isOn(int index) {
-    if (index < 0 || index >= N_LEDS) return false;
-    return m_state & (1 << N_LEDS - index - 1);
+  inline uint8_t bitmaskFromIndex(uint8_t index)
+  {
+    return (1 << N_LEDS - index - 1);
   }
-
-  bool isOff(int index) {
-    return !isOn(index);
-  }
-
+    
   void update()
   {
     digitalWrite(m_latchPin, LOW);
@@ -104,8 +108,8 @@ private:
     for (int i = 0; i != sizeof ... (args); ++i) {
       int const ledIndex = leds[i];
       if (ledIndex < 0 || ledIndex >= N_LEDS) continue; // ignore out of bounds indices
-      if (on) m_state |= (1 << (N_LEDS - leds[i]) - 1);
-      else    m_state &= ~(1 << (N_LEDS - leds[i]) - 1);
+      if (on) m_state |= bitmaskFromIndex(leds[i]);
+      else    m_state &= ~bitmaskFromIndex(leds[i]);
     }
     update();
   }
@@ -133,7 +137,6 @@ private:
       while (millis() - startTime < duration)
       {
         on(args ...);
-        delay(1);
         delay(brightness * delayRange);
         off(args ...);
         delay((1 - brightness) * delayRange);
@@ -147,8 +150,5 @@ private:
     }
   }
 };
-
-
-
 
 #endif // LEDARRAY_H

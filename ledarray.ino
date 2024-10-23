@@ -63,7 +63,7 @@ LEDArray leds(LATCH, CLOCK, DATA);
       knipperen. Hij moet weten hoe vaak de LEDs moeten knipperen en 
       hoeveel milliseconden de knippers duren.
 
-      leds.blink(5, 100)   -> alle LEDs knipperen met 100ms tussenpozen
+      leds.blink(5, 100)   -> alle LEDs 5x knipperen met 100ms tussenpozen
       leds.blink(10, 1000, GREEN1)
 
 */ 
